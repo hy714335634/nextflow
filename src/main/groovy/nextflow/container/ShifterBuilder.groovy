@@ -6,6 +6,9 @@ import nextflow.util.Escape
 import java.nio.file.Path
 
 /**
+ * Wrap a task execution in a Shifter container
+ *
+ * See https://github.com/NERSC/shifter
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */

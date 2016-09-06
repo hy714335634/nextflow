@@ -231,6 +231,8 @@ class BashWrapperBuilder {
 
     private boolean isShifterEnabled
 
+    private boolean isUdockerEnabled
+
     BashWrapperBuilder( TaskRun task ) {
         this(new TaskBean(task))
     }

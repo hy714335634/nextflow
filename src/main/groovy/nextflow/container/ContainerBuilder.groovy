@@ -1,5 +1,6 @@
 package nextflow.container
 /**
+ * Common trait for container wrapper builders
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
