@@ -28,6 +28,8 @@ import com.google.common.hash.HashCode
 import groovy.transform.Memoized
 import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
+import nextflow.container.ContainerDriver
+import nextflow.exception.IllegalConfigException
 import nextflow.exception.ProcessException
 import nextflow.exception.ProcessMissingTemplateException
 import nextflow.exception.ProcessNotRecoverableException
@@ -44,6 +46,8 @@ import nextflow.script.ValueOutParam
 import nextflow.container.ContainerScriptTokens
 import nextflow.container.DockerBuilder
 import nextflow.container.ShifterBuilder
+
+import static nextflow.container.ContainerDriver.*
 
 /**
  * Models a task instance
@@ -520,27 +524,56 @@ class TaskRun implements Cloneable {
             imageName = config.container as String
         }
 
-        if( getShifterConfig().enabled ) {
-            ShifterBuilder.normalizeImageName(imageName, getShifterConfig())
+        if( isShifterEnabled() ) {
+            ShifterBuilder.normalizeImageName(imageName, getContainerConfig())
         }
         else {
-            DockerBuilder.normalizeImageName(imageName, getDockerConfig())
+            DockerBuilder.normalizeImageName(imageName, getContainerConfig())
         }
     }
 
     /**
      * @return A {@link Map} object holding the configuration attributes for the Docker engine
      */
+    @Deprecated
     Map getDockerConfig() {
         def result = processor.getSession().config?.docker as Map
         result != null ? result : Collections.emptyMap()
     }
 
+    @Deprecated
     Map getShifterConfig() {
         def result = processor.getSession().config?.shifter as Map
         result != null ? result : Collections.emptyMap()
     }
 
+    Map getContainerConfig() {
+        def drivers = new LinkedList<Map>()
+        getContainerConfig0(DOCKER, drivers)
+        getContainerConfig0(SHIFTER, drivers)
+        getContainerConfig0(UDOCKER, drivers)
+
+        def enabled = drivers.findAll { it.enabled?.toString() == 'true' }
+        if( enabled.size() > 1 ) {
+            def names = enabled.collect { it.driver }
+            throw new IllegalConfigException("Cannot enable more than one container engine -- Choose either one of: ${names.join(', ')}")
+        }
+
+        return enabled ? enabled.get(0) : ( drivers ? drivers.get(0) : Collections.emptyMap() )
+    }
+
+
+    private void getContainerConfig0(ContainerDriver driver, List<Map> drivers) {
+        def config = processor.getSession().config?.get( driver.toString() ) as Map
+        if( config ) {
+            config.driver = driver
+            drivers << config
+        }
+    }
+
+    ContainerDriver getContainerDriver() {
+        getContainerConfig().driver
+    }
     /**
      * @return {@true} when the process must run within a container and the docker engine is enabled
      */
@@ -548,7 +581,14 @@ class TaskRun implements Cloneable {
         if( isContainerExecutable() )
             return true
 
-        return getDockerConfig()?.enabled?.toString() == 'true'
+        def config = getContainerConfig()
+        return config && config.driver == DOCKER && config.enabled?.toString() == 'true'
+    }
+
+
+    boolean isShifterEnabled() {
+        def config = getContainerConfig()
+        return config && config.driver == SHIFTER && config.enabled?.toString() == 'true'
     }
 
     /**
