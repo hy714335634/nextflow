@@ -28,6 +28,7 @@ import com.google.common.hash.HashCode
 import groovy.transform.Memoized
 import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
+import nextflow.container.ContainerConfig
 import nextflow.container.ContainerDriver
 import nextflow.exception.IllegalConfigException
 import nextflow.exception.ProcessException
@@ -547,7 +548,7 @@ class TaskRun implements Cloneable {
         result != null ? result : Collections.emptyMap()
     }
 
-    Map getContainerConfig() {
+    ContainerConfig getContainerConfig() {
         def drivers = new LinkedList<Map>()
         getContainerConfig0(DOCKER, drivers)
         getContainerConfig0(SHIFTER, drivers)
@@ -571,9 +572,6 @@ class TaskRun implements Cloneable {
         }
     }
 
-    ContainerDriver getContainerDriver() {
-        getContainerConfig().driver
-    }
     /**
      * @return {@true} when the process must run within a container and the docker engine is enabled
      */
@@ -582,13 +580,13 @@ class TaskRun implements Cloneable {
             return true
 
         def config = getContainerConfig()
-        return config && config.driver == DOCKER && config.enabled?.toString() == 'true'
+        return config && config.driver == DOCKER && config.enabled
     }
 
 
     boolean isShifterEnabled() {
         def config = getContainerConfig()
-        return config && config.driver == SHIFTER && config.enabled?.toString() == 'true'
+        return config && config.driver == SHIFTER && config.enabled
     }
 
     /**

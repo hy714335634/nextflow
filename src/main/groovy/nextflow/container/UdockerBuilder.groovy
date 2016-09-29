@@ -41,12 +41,13 @@ class UdockerBuilder implements ContainerBuilder {
         }
         '''
 
-    private String image
+    private String cpus
+
+    private String runCommand
 
     UdockerBuilder( String image ) {
         this.image = image
     }
-
 
     @Override
     ContainerBuilder params(Map config) {
@@ -57,19 +58,51 @@ class UdockerBuilder implements ContainerBuilder {
     String build(StringBuilder result) {
         assert image, 'Missing container image'
 
+        result << 'udocker.py '
+
+        if( cpus ) {
+            result << "--cpuset-cpus=$cpus "
+        }
+
+        // add the environment
         for( def entry : env ) {
             result << makeEnv(entry) << ' '
         }
 
-        result << 'shifter '
+        if( temp )
+            result << "-v $temp:/tmp "
 
+        // mount the input folders
+        result << makeVolumes(mounts)
+        result << ' -w "$PWD" '
 
-        result << '--image ' << image
+        if( options )
+            result << options.join(' ') << ' '
 
-        if( entryPoint )
-            result << ' ' << entryPoint
+        // the name is after the user option so it has precedence over any options provided by the user
+        if( name )
+            result << '--name ' << name << ' '
+
+        // finally the container name
+        result << containerId
 
         runCommand = result.toString()
+
+        if( remove  ) {
+            removeCommand = 'udocker.py rm ' + containerId
+        }
+
+        if( kill )  {
+            killCommand = 'docker kill '
+            // if `kill` is a string it is interpreted as a the kill signal
+            if( kill instanceof String ) killCommand += "-s $kill "
+            killCommand += name
+            // prefix with sudo if required
+            if( sudo ) killCommand = 'sudo ' + killCommand
+        }
+
+
+        return runCommand
 
     }
 
