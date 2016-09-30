@@ -31,6 +31,9 @@ import nextflow.processor.TaskRun
 import nextflow.util.Duration
 import nextflow.util.Escape
 import org.apache.commons.lang.StringUtils
+
+import static nextflow.executor.AbstractGridExecutor.QueueStatus.*
+
 /**
  * Generic task processor executing a task through a grid facility
  *
@@ -315,7 +318,8 @@ abstract class AbstractGridExecutor extends Executor {
             return false
         }
 
-        final result = fQueueStatus[jobId] == QueueStatus.RUNNING || fQueueStatus[jobId] == QueueStatus.HOLD
+        final status = fQueueStatus[jobId]
+        final result = status == RUNNING || status == HOLD || status == PENDING
         log.trace "JobId `$jobId` active status: $result"
         return result
     }
