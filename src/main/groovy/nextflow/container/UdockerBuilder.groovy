@@ -20,6 +20,8 @@
 
 package nextflow.container
 
+import groovy.transform.CompileStatic
+
 /**
  * Wrap a task execution in a Udocker container
  *
@@ -27,38 +29,61 @@ package nextflow.container
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-class UdockerBuilder implements ContainerBuilder {
+@CompileStatic
+class UdockerBuilder extends ContainerBuilder {
 
-    static private String UDOCKER_HELPERS = '''
-        function udocker_run() {
-            local image="$1"
-            shift
-            # pull the image if needed
-            (udocker.py images | egrep -o "^$image\\s") || udocker.py pull "$image"
-            # create the container
-            id=$(udocker.py create "$image")
-            udocker.py run -v $PWD -w $PWD $id "$@"
-        }
-        '''
+    private String image
 
-    private String cpus
+    private String temp
+
+    private boolean remove = true
+
+    private List<String> runOptions = []
+
+    private String entryPoint = '/bin/bash'
 
     private String runCommand
 
     UdockerBuilder( String image ) {
         this.image = image
+        if( !this.image.contains(":") )
+            this.image += ':latest'
     }
 
     @Override
-    ContainerBuilder params(Map config) {
-        return null
+    ContainerBuilder params(Map params) {
+        if( !params ) return this
+
+        if( params.containsKey('temp') )
+            this.temp = params.temp
+
+        if( params.containsKey('runOptions') )
+            addRunOptions(params.runOptions.toString())
+
+        if ( params.containsKey('remove') )
+            this.remove = params.remove?.toString() == 'true'
+
+        if( params.containsKey('entry') )
+            this.entryPoint = params.entry
+
+        return this
+    }
+
+    UdockerBuilder addRunOptions(String str) {
+        runOptions.add(str)
+        return this
     }
 
     @Override
-    String build(StringBuilder result) {
+    UdockerBuilder build(StringBuilder result) {
         assert image, 'Missing container image'
 
         result << 'udocker.py '
+        result << 'run '
+
+        if( remove ) {
+            result << '--rm '
+        }
 
         if( cpus ) {
             result << "--cpuset-cpus=$cpus "
@@ -74,40 +99,54 @@ class UdockerBuilder implements ContainerBuilder {
 
         // mount the input folders
         result << makeVolumes(mounts)
-        result << ' -w "$PWD" '
+        result << ' -w "$PWD" --bindhome '
 
-        if( options )
-            result << options.join(' ') << ' '
 
-        // the name is after the user option so it has precedence over any options provided by the user
-        if( name )
-            result << '--name ' << name << ' '
+        if( runOptions )
+            result << runOptions.join(' ') << ' '
 
-        // finally the container name
-        result << containerId
+        // the ID of the container to run
+        result << "\$(udocker.py create \"$image\") "
+
+        // finally the entry point to execute eg. `/bin/bash`
+        result << entryPoint
 
         runCommand = result.toString()
-
-        if( remove  ) {
-            removeCommand = 'udocker.py rm ' + containerId
-        }
-
-        if( kill )  {
-            killCommand = 'docker kill '
-            // if `kill` is a string it is interpreted as a the kill signal
-            if( kill instanceof String ) killCommand += "-s $kill "
-            killCommand += name
-            // prefix with sudo if required
-            if( sudo ) killCommand = 'sudo ' + killCommand
-        }
-
-
-        return runCommand
-
+        return this
     }
+
 
     @Override
-    def getRunCommand() {
-        return null
+    String getRunCommand() { runCommand }
+
+    @Override
+    String getRemoveCommand() { null }
+
+    StringBuilder appendCreateCommand( StringBuilder wrapper ) {
+        wrapper << "(udocker.py images | egrep -o \"^$image\\s\") || udocker.py pull \"$image\"\n"
+        wrapper << "[[ \$? != 0 ]] && echo \"Udocker failed to pull container \\`$image\\`\" >&2 && exit 1\n"
+        wrapper << "udocker_cid=\$(udocker.py create \"$image\")\n"
+        wrapper << "[[ \$? != 0 ]] && echo \"Udocker failed to create container \\`$image\\`\" >&2 && exit 1\n"
     }
+
+
+    /**
+     * Normalize Shifter image name adding `docker:` prefix or `:latest`
+     * when required
+     *
+     * @param imageName The container image name
+     * @param shifterConfig Shifter configuration map
+     * @return Image name in Shifter canonical format
+     */
+    static String normalizeImageName( String imageName ) {
+
+        if( !imageName )
+            return null
+
+        if( !imageName.contains(':') )
+            imageName += ':latest'
+
+        return imageName
+    }
+
 }

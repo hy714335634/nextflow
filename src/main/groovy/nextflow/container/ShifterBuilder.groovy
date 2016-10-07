@@ -1,10 +1,7 @@
 package nextflow.container
-
-import groovy.transform.PackageScope
-import nextflow.util.Escape
-
 import java.nio.file.Path
 
+import nextflow.util.Escape
 /**
  * Wrap a task execution in a Shifter container
  *
@@ -12,7 +9,7 @@ import java.nio.file.Path
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-class ShifterBuilder implements ContainerBuilder {
+class ShifterBuilder extends ContainerBuilder {
 
     static private String SHIFTER_HELPERS = '''
         function shifter_img() {
@@ -50,10 +47,11 @@ class ShifterBuilder implements ContainerBuilder {
         this.image = image
     }
 
+    @Override
     String getRunCommand() { runCommand }
 
     @Override
-    String build(StringBuilder result) {
+    ShifterBuilder build(StringBuilder result) {
         assert image
 
         for( def entry : env ) {
@@ -71,6 +69,7 @@ class ShifterBuilder implements ContainerBuilder {
             result << ' ' << entryPoint
 
         runCommand = result.toString()
+        return this
     }
 
     ShifterBuilder params( Map params ) {
@@ -92,6 +91,7 @@ class ShifterBuilder implements ContainerBuilder {
     StringBuilder appendRunCommand( StringBuilder wrapper ) {
         wrapper << 'shifter_pull ' << image << '\n'
         wrapper << runCommand
+        return wrapper
     }
 
     /**
@@ -127,8 +127,7 @@ class ShifterBuilder implements ContainerBuilder {
      * @param result
      * @return
      */
-    @PackageScope
-    static CharSequence makeEnv( env, StringBuilder result = new StringBuilder() ) {
+    protected CharSequence makeEnv( env, StringBuilder result = new StringBuilder() ) {
         // append the environment configuration
         if( env instanceof File ) {
             env = env.toPath()

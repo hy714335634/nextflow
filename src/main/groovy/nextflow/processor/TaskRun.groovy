@@ -30,6 +30,7 @@ import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
 import nextflow.container.ContainerConfig
 import nextflow.container.ContainerDriver
+import nextflow.container.UdockerBuilder
 import nextflow.exception.IllegalConfigException
 import nextflow.exception.ProcessException
 import nextflow.exception.ProcessMissingTemplateException
@@ -525,8 +526,13 @@ class TaskRun implements Cloneable {
             imageName = config.container as String
         }
 
-        if( isShifterEnabled() ) {
-            ShifterBuilder.normalizeImageName(imageName, getContainerConfig())
+        final cfg = getContainerConfig()
+        final driver = cfg.getDriver()
+        if( driver == SHIFTER ) {
+            ShifterBuilder.normalizeImageName(imageName, cfg)
+        }
+        else if( driver == UDOCKER ) {
+            UdockerBuilder.normalizeImageName(imageName)
         }
         else {
             DockerBuilder.normalizeImageName(imageName, getContainerConfig())
@@ -542,12 +548,7 @@ class TaskRun implements Cloneable {
         result != null ? result : Collections.emptyMap()
     }
 
-    @Deprecated
-    Map getShifterConfig() {
-        def result = processor.getSession().config?.shifter as Map
-        result != null ? result : Collections.emptyMap()
-    }
-
+    @Memoized
     ContainerConfig getContainerConfig() {
         def drivers = new LinkedList<Map>()
         getContainerConfig0(DOCKER, drivers)
@@ -560,12 +561,12 @@ class TaskRun implements Cloneable {
             throw new IllegalConfigException("Cannot enable more than one container engine -- Choose either one of: ${names.join(', ')}")
         }
 
-        return enabled ? enabled.get(0) : ( drivers ? drivers.get(0) : Collections.emptyMap() )
+        (enabled ? enabled.get(0) : ( drivers ? drivers.get(0) : Collections.emptyMap() )) as ContainerConfig
     }
 
 
     private void getContainerConfig0(ContainerDriver driver, List<Map> drivers) {
-        def config = processor.getSession().config?.get( driver.toString() ) as Map
+        def config = processor.getSession().config?.get( driver.name ) as Map
         if( config ) {
             config.driver = driver
             drivers << config

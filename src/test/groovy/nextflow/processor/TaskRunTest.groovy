@@ -24,6 +24,8 @@ import java.nio.file.Paths
 
 import ch.grengine.Grengine
 import nextflow.Session
+import nextflow.container.ContainerConfig
+import nextflow.container.ContainerDriver
 import nextflow.file.FileHolder
 import nextflow.script.EnvInParam
 import nextflow.script.FileInParam
@@ -36,6 +38,7 @@ import nextflow.script.TokenVar
 import nextflow.script.ValueInParam
 import nextflow.script.ValueOutParam
 import spock.lang.Specification
+import spock.lang.Unroll
 import test.TestHelper
 /**
  *
@@ -336,6 +339,28 @@ class TaskRunTest extends Specification {
         then:
         task.getContainer() == 'my.registry/foo/bar'
 
+    }
+
+    @Unroll
+    def 'should return engine type' () {
+        given:
+        def task = [:] as TaskRun
+        task.processor = Mock(TaskProcessor)
+        task.config = new TaskConfig( [container: 'busybox'] )
+        task.processor.getSession() >> new Session([(driver.name): config])
+
+        expect:
+        task.container == contnr
+        task.containerConfig == config as ContainerConfig
+        task.containerConfig.enabled
+        task.containerConfig.driver == driver
+
+        where:
+        driver                  | contnr                    | config
+        ContainerDriver.DOCKER  | 'busybox'                 | [enabled: true, x:'alpha', y: 'beta']
+        ContainerDriver.DOCKER  | 'd.reg/busybox'           | [enabled: true, x:'alpha', y: 'beta', registry: 'd.reg']
+        ContainerDriver.UDOCKER | 'busybox:latest'          | [enabled: true, x:'alpha', y: 'beta']
+        ContainerDriver.SHIFTER | 'docker:busybox:latest'   | [enabled: true, x:'delta', y: 'gamma']
     }
 
     def 'should return the container name defined in the script block' () {

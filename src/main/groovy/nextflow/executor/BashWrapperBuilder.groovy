@@ -582,6 +582,40 @@ class BashWrapperBuilder {
 
     UdockerBuilder createUdockerBuilder(Map environment, String changeDir) {
 
+        def builder = new UdockerBuilder(containerImage)
+        builder.addMountForInputs(inputFiles)
+        builder.addMount(workDir)
+        if( !executable )
+            builder.addMount(binDir)
+
+        if(this.containerMount)
+            builder.addMount(containerMount)
+
+
+        if(this.containerMemory)
+            builder.setMemory(containerMemory)
+
+        if(this.containerCpuset)
+            builder.addRunOptions(containerCpuset)
+
+        // set the environment
+        if( environment ) {
+            // export the nextflow script debug variable
+            builder.addEnv( 'NXF_DEBUG=${NXF_DEBUG:=0}')
+            builder.addEnv( workDir.resolve(TaskRun.CMD_ENV) )
+        }
+
+        // set up run docker params
+        builder.params(containerConfig)
+
+        // extra rule for the 'auto' temp dir temp dir
+        def temp = containerConfig.temp?.toString()
+        if( temp == 'auto' || temp == 'true' ) {
+            builder.setTemp( changeDir ? '$NXF_SCRATCH' : '$(nxf_mktemp)' )
+        }
+
+        builder.build()
+        return builder
     }
 
     /**
