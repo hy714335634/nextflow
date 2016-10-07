@@ -29,7 +29,6 @@ import groovy.transform.Memoized
 import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
 import nextflow.container.ContainerConfig
-import nextflow.container.ContainerDriver
 import nextflow.container.UdockerBuilder
 import nextflow.exception.IllegalConfigException
 import nextflow.exception.ProcessException
@@ -48,8 +47,6 @@ import nextflow.script.ValueOutParam
 import nextflow.container.ContainerScriptTokens
 import nextflow.container.DockerBuilder
 import nextflow.container.ShifterBuilder
-
-import static nextflow.container.ContainerDriver.*
 
 /**
  * Models a task instance
@@ -143,6 +140,10 @@ class TaskRun implements Cloneable {
      * Task produced standard error
      */
     def stderr
+
+    private ContainerConfig containerConfigCache
+
+    private Integer containerConfigHash
 
     /**
      * @return The task produced stdout result as string
@@ -527,11 +528,11 @@ class TaskRun implements Cloneable {
         }
 
         final cfg = getContainerConfig()
-        final driver = cfg.getDriver()
-        if( driver == SHIFTER ) {
+        final engine = cfg.getEngine()
+        if( engine == 'shifter' ) {
             ShifterBuilder.normalizeImageName(imageName, cfg)
         }
-        else if( driver == UDOCKER ) {
+        else if( engine == 'udocker' ) {
             UdockerBuilder.normalizeImageName(imageName)
         }
         else {
@@ -548,27 +549,32 @@ class TaskRun implements Cloneable {
         result != null ? result : Collections.emptyMap()
     }
 
-    @Memoized
     ContainerConfig getContainerConfig() {
-        def drivers = new LinkedList<Map>()
-        getContainerConfig0(DOCKER, drivers)
-        getContainerConfig0(SHIFTER, drivers)
-        getContainerConfig0(UDOCKER, drivers)
 
-        def enabled = drivers.findAll { it.enabled?.toString() == 'true' }
+        if( containerConfigCache != null && containerConfigHash == processor.getSession().config?.hashCode() ) {
+            return containerConfigCache
+        }
+
+        def engines = new LinkedList<Map>()
+        getContainerConfig0('docker', engines)
+        getContainerConfig0('shifter', engines)
+        getContainerConfig0('udocker', engines)
+
+        def enabled = engines.findAll { it.enabled?.toString() == 'true' }
         if( enabled.size() > 1 ) {
-            def names = enabled.collect { it.driver }
+            def names = enabled.collect { it.engine }
             throw new IllegalConfigException("Cannot enable more than one container engine -- Choose either one of: ${names.join(', ')}")
         }
 
-        (enabled ? enabled.get(0) : ( drivers ? drivers.get(0) : Collections.emptyMap() )) as ContainerConfig
+        containerConfigHash = processor.getSession().config?.hashCode()
+        containerConfigCache = (enabled ? enabled.get(0) : ( engines ? engines.get(0) : [engine:'docker'] )) as ContainerConfig
     }
 
 
-    private void getContainerConfig0(ContainerDriver driver, List<Map> drivers) {
-        def config = processor.getSession().config?.get( driver.name ) as Map
+    private void getContainerConfig0(String engine, List<Map> drivers) {
+        def config = processor.getSession().config?.get(engine) as Map
         if( config ) {
-            config.driver = driver
+            config.engine = engine
             drivers << config
         }
     }
@@ -581,13 +587,7 @@ class TaskRun implements Cloneable {
             return true
 
         def config = getContainerConfig()
-        return config && config.driver == DOCKER && config.enabled
-    }
-
-
-    boolean isShifterEnabled() {
-        def config = getContainerConfig()
-        return config && config.driver == SHIFTER && config.enabled
+        return config && config.engine == 'docker' && config.enabled
     }
 
     /**

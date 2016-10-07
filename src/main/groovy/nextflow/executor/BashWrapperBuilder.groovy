@@ -32,8 +32,6 @@ import nextflow.container.ContainerScriptTokens
 import nextflow.container.DockerBuilder
 import nextflow.container.ShifterBuilder
 
-import static nextflow.container.ContainerDriver.*
-
 /**
  * Builder to create the BASH script which is used to
  * wrap and launch the user task
@@ -272,11 +270,11 @@ class BashWrapperBuilder {
      * Setup container related variables
      */
     protected boolean containerInit() {
-        containerImage && (executable || containerConfig.enabled?.toString() == 'true')
+        containerImage && (executable || containerConfig.isEnabled())
     }
 
     protected boolean fixOwnership() {
-        systemOsName == 'Linux' && containerConfig?.fixOwnership && containerInit() && containerConfig.driver == DOCKER // <-- note: only for docker (shifter is not affected)
+        systemOsName == 'Linux' && containerConfig?.fixOwnership && containerInit() && containerConfig.engine == 'docker' // <-- note: only for docker (shifter is not affected)
     }
 
     /**
@@ -542,14 +540,17 @@ class BashWrapperBuilder {
 
     ContainerBuilder createContainerBuilder(Map environment, String changeDir) {
 
-        if( containerConfig.driver == UDOCKER )
+        final engine = containerConfig.getEngine()
+        if( engine == 'udocker' )
             return createUdockerBuilder(environment, changeDir)
 
-        else if( containerConfig.driver == SHIFTER )
+        else if( engine == 'shifter' )
             return createShifterBuilder(environment, changeDir)
 
-        else
+        else if( engine == 'docker' )
             return createDockerBuilder(environment, changeDir)
+
+        throw new IllegalArgumentException("Unknown container engine: $engine")
     }
 
     @PackageScope

@@ -24,6 +24,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 import nextflow.Session
+import nextflow.container.ContainerConfig
 import nextflow.container.DockerBuilder
 import nextflow.processor.TaskBean
 import nextflow.processor.TaskProcessor
@@ -754,7 +755,7 @@ class BashWrapperBuilderTest extends Specification {
                 workDir: folder,
                 script: 'echo Hello world!',
                 containerImage: 'busybox',
-                containerConfig: [sudo: true, enabled: true]
+                containerConfig: [engine: 'docker', sudo: true, enabled: true]
                 ] as TaskBean)
         bash.build()
 
@@ -862,7 +863,7 @@ class BashWrapperBuilderTest extends Specification {
                 workDir: folder,
                 script: 'echo Hello world!',
                 containerImage: 'busybox',
-                containerConfig: [temp: 'auto', enabled: true]
+                containerConfig: [engine: 'docker', temp: 'auto', enabled: true]
                 ] as TaskBean)
         bash.build()
 
@@ -973,7 +974,7 @@ class BashWrapperBuilderTest extends Specification {
                 workDir: folder,
                 script: 'echo Hello world!',
                 containerImage: 'ubuntu',
-                containerConfig: [temp: 'auto', enabled: true, remove:false, kill: false]
+                containerConfig: [engine: 'docker', temp: 'auto', enabled: true, remove:false, kill: false]
                 ] as TaskBean)
         bash.build()
 
@@ -1080,7 +1081,7 @@ class BashWrapperBuilderTest extends Specification {
                 workDir: folder,
                 script: 'echo Hello world!',
                 containerImage: 'ubuntu',
-                containerConfig: [temp: 'auto', enabled: true, remove:false, kill: 'SIGXXX']
+                containerConfig: [engine: 'docker', temp: 'auto', enabled: true, remove:false, kill: 'SIGXXX']
                 ] as TaskBean)
         bash.build()
 
@@ -1191,7 +1192,7 @@ class BashWrapperBuilderTest extends Specification {
                 script: 'echo Hello world!',
                 containerImage: 'busybox',
                 containerMount: '/folder with blanks' as Path,
-                containerConfig: [enabled: true]
+                containerConfig: [engine: 'docker', enabled: true]
         ] as TaskBean)
         bash.build()
 
@@ -1411,7 +1412,7 @@ class BashWrapperBuilderTest extends Specification {
                 workDir: folder,
                 script: 'echo Hello world!',
                 containerImage: 'sl65',
-                containerConfig: [enabled: true, fixOwnership: true]
+                containerConfig: [enabled: true, fixOwnership: true, engine: 'docker'] as ContainerConfig
                 ] as TaskBean)
         bash.systemOsName = 'Linux'
         bash.build()
@@ -1937,8 +1938,7 @@ class BashWrapperBuilderTest extends Specification {
                 script: 'echo Hello world!',
                 containerImage: 'docker:ubuntu:latest',
                 environment: [PATH: '/path/to/bin'],
-                shifterConfig: [enabled: true],
-                containerConfig: [:]
+                containerConfig: [enabled: true, engine: 'shifter'] as ContainerConfig
         ] as TaskBean)
         bash.build()
 

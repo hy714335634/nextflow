@@ -24,6 +24,7 @@ import java.nio.file.Path
 
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
+import nextflow.container.ContainerConfig
 import nextflow.executor.BashWrapperBuilder
 import nextflow.util.MemoryUnit
 
@@ -60,7 +61,7 @@ class TaskBean implements Serializable, Cloneable {
 
     List<String> shell
 
-    Map containerConfig
+    ContainerConfig containerConfig
 
     String containerCpuset
 

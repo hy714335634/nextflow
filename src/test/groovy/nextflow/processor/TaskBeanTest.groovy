@@ -23,6 +23,7 @@ package nextflow.processor
 import java.nio.file.Paths
 
 import nextflow.Session
+import nextflow.container.ContainerConfig
 import nextflow.util.MemoryUnit
 import spock.lang.Specification
 /**
@@ -89,7 +90,7 @@ class TaskBeanTest extends Specification {
         bean.afterScript == 'after do that'
 
         bean.containerImage == 'busybox:latest'
-        bean.containerConfig == [docker: true, registry: 'x']
+        bean.containerConfig == [docker: true, registry: 'x'] as ContainerConfig
         bean.containerMemory == new MemoryUnit('1GB')
         bean.executable
         bean.statsEnabled

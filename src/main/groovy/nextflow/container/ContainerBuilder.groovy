@@ -6,7 +6,7 @@ import nextflow.util.Escape
 import nextflow.util.MemoryUnit
 import nextflow.util.PathTrie
 /**
- * Common trait for container wrapper builders
+ * Base class for container wrapper builders
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */

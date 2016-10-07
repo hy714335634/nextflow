@@ -25,7 +25,6 @@ import java.nio.file.Paths
 import ch.grengine.Grengine
 import nextflow.Session
 import nextflow.container.ContainerConfig
-import nextflow.container.ContainerDriver
 import nextflow.file.FileHolder
 import nextflow.script.EnvInParam
 import nextflow.script.FileInParam
@@ -325,19 +324,18 @@ class TaskRunTest extends Specification {
         given:
         def task = [:] as TaskRun
         task.processor = Mock(TaskProcessor)
-        task.processor.getSession() >> new Session()
 
         when:
         task.config = [container:'foo/bar']
+        task.processor.getSession() >> sess
         then:
-        task.getContainer() == 'foo/bar'
+        task.getContainer() == expected
         !task.isContainerExecutable()
 
-        when:
-        task.processor = Mock(TaskProcessor)
-        task.processor.session >> { new Session( docker: [registry:'my.registry'] ) }
-        then:
-        task.getContainer() == 'my.registry/foo/bar'
+        where:
+        sess                                            | expected
+        new Session()                                   | 'foo/bar'
+        new Session( docker: [registry:'my.registry'] ) | 'my.registry/foo/bar'
 
     }
 
@@ -347,20 +345,20 @@ class TaskRunTest extends Specification {
         def task = [:] as TaskRun
         task.processor = Mock(TaskProcessor)
         task.config = new TaskConfig( [container: 'busybox'] )
-        task.processor.getSession() >> new Session([(driver.name): config])
+        task.processor.getSession() >> new Session([(engine): config])
 
         expect:
         task.container == contnr
         task.containerConfig == config as ContainerConfig
         task.containerConfig.enabled
-        task.containerConfig.driver == driver
+        task.containerConfig.engine == engine
 
         where:
-        driver                  | contnr                    | config
-        ContainerDriver.DOCKER  | 'busybox'                 | [enabled: true, x:'alpha', y: 'beta']
-        ContainerDriver.DOCKER  | 'd.reg/busybox'           | [enabled: true, x:'alpha', y: 'beta', registry: 'd.reg']
-        ContainerDriver.UDOCKER | 'busybox:latest'          | [enabled: true, x:'alpha', y: 'beta']
-        ContainerDriver.SHIFTER | 'docker:busybox:latest'   | [enabled: true, x:'delta', y: 'gamma']
+        engine      | contnr                    | config
+        'docker'    | 'busybox'                 | [enabled: true, x:'alpha', y: 'beta']
+        'docker'    | 'd.reg/busybox'           | [enabled: true, x:'alpha', y: 'beta', registry: 'd.reg']
+        'udocker'   | 'busybox:latest'          | [enabled: true, x:'alpha', y: 'beta']
+        'shifter'   | 'docker:busybox:latest'   | [enabled: true, x:'delta', y: 'gamma']
     }
 
     def 'should return the container name defined in the script block' () {
@@ -368,7 +366,6 @@ class TaskRunTest extends Specification {
         given:
         def task = [:] as TaskRun
         task.processor = Mock(TaskProcessor)
-        task.processor.getSession() >> new Session()
         task.script= '''
                 busybox --foo --bar
                 mv result to/dir
@@ -376,16 +373,15 @@ class TaskRunTest extends Specification {
 
         when:
         task.config = [container: true]
+        task.processor.session >> { sess }
         then:
-        task.getContainer() == 'busybox'
+        task.getContainer() == expected
         task.isContainerExecutable()
 
-        when:
-        task.processor = Mock(TaskProcessor)
-        task.processor.session >> { new Session( docker: [registry:'my.registry'] ) }
-        then:
-        task.getContainer() == 'my.registry/busybox'
-        task.isContainerExecutable()
+        where:
+        sess                                                | expected
+        new Session()                                       | 'busybox'
+        new Session( docker: [registry:'my.registry'] )     | 'my.registry/busybox'
 
     }
 

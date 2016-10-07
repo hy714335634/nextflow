@@ -20,29 +20,32 @@
 
 package nextflow.container
 
+import groovy.transform.CompileStatic
+
 /**
+ * Models container engine configuration
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-class ContainerConfig implements Map {
+@CompileStatic
+class ContainerConfig extends LinkedHashMap {
 
-    @Delegate
-    Map delegate
+    /* required by Kryo deserialization -- do not remove */
+    private ContainerConfig() { }
 
     ContainerConfig(Map config) {
-        this.delegate = config
+        super(config)
     }
 
-
     boolean isEnabled() {
-        delegate.enabled?.toString() == 'true'
+        get('enabled')?.toString() == 'true'
     }
 
     boolean isLegacy() {
-        delegate.legacy?.toString() == 'true'
+        get(legacy)?.toString() == 'true'
     }
 
-    ContainerDriver getDriver() {
-        delegate.driver as ContainerDriver
+    String getEngine() {
+        get('engine')
     }
 }

@@ -115,18 +115,15 @@ class UdockerBuilder extends ContainerBuilder {
         return this
     }
 
-
     @Override
     String getRunCommand() { runCommand }
 
     @Override
-    String getRemoveCommand() { null }
-
-    StringBuilder appendCreateCommand( StringBuilder wrapper ) {
-        wrapper << "(udocker.py images | egrep -o \"^$image\\s\") || udocker.py pull \"$image\"\n"
-        wrapper << "[[ \$? != 0 ]] && echo \"Udocker failed to pull container \\`$image\\`\" >&2 && exit 1\n"
-        wrapper << "udocker_cid=\$(udocker.py create \"$image\")\n"
-        wrapper << "[[ \$? != 0 ]] && echo \"Udocker failed to create container \\`$image\\`\" >&2 && exit 1\n"
+    StringBuilder appendRunCommand( StringBuilder wrapper ) {
+        wrapper << "((udocker.py images | egrep -o \"^$image\\s\") || udocker.py pull \"$image\")>/dev/null \n"
+        wrapper << "[[ \$? != 0 ]] && echo \"Udocker failed while pulling container \\`$image\\`\" >&2 && exit 1\n"
+        wrapper << runCommand
+        return wrapper
     }
 
 

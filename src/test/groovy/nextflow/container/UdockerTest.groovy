@@ -34,7 +34,7 @@ class UdockerTest extends Specification {
     def 'test udocker env'() {
 
         given:
-        def builder = [:] as UdockerBuilder
+        def builder = new UdockerBuilder('x')
 
         expect:
         builder.makeEnv('X=1').toString() == '-e "X=1"'
@@ -47,7 +47,7 @@ class UdockerTest extends Specification {
     def 'test udocker mounts'() {
 
         given:
-        def builder = [:] as UdockerBuilder
+        def builder = new UdockerBuilder('x')
         def files =  [Paths.get('/folder/data'),  Paths.get('/folder/db'), Paths.get('/folder/db') ]
         def real = [ Paths.get('/user/yo/nextflow/bin'), Paths.get('/user/yo/nextflow/work'), Paths.get('/db/pdb/local/data') ]
         def quotes =  [ Paths.get('/folder with blanks/A'), Paths.get('/folder with blanks/B') ]
@@ -116,8 +116,8 @@ class UdockerTest extends Specification {
         then:
         script.toString() == '''
             (udocker.py images | egrep -o "^ubuntu:latest\\s") || udocker.py pull "ubuntu:latest"
-            udocker_cid=$(udocker.py create "ubuntu:latest")
-            udocker.py run -v "$PWD":"$PWD" -w "$PWD" --bindhome $udocker_cid /bin/bash
+            [[ $? != 0 ]] && echo "Udocker failed while pulling container \\`ubuntu:latest\\`" >&2 && exit 1
+            udocker.py run --rm -v "$PWD":"$PWD" -w "$PWD" --bindhome $(udocker.py create "ubuntu:latest") /bin/bash
             '''
             .stripIndent().trim()
 
