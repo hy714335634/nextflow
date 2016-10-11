@@ -69,7 +69,7 @@ class TaskBeanTest extends Specification {
         task.getTargetDir() >> Paths.get('/target/work/dir')
         task.getInputEnvironment() >> [beta: 'xxx', gamma: 'yyy']
         task.getContainer() >> 'busybox:latest'
-        task.getDockerConfig() >> [docker: true, registry: 'x']
+        task.getContainerConfig() >> [docker: true, registry: 'x']
         task.isContainerExecutable() >> true
 
         when:

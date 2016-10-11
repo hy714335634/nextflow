@@ -28,7 +28,7 @@ import spock.lang.Specification
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-class UdockerTest extends Specification {
+class UdockerBuilderTest extends Specification {
 
 
     def 'test udocker env'() {
@@ -115,7 +115,7 @@ class UdockerTest extends Specification {
         builder.appendRunCommand(script)
         then:
         script.toString() == '''
-            (udocker.py images | egrep -o "^ubuntu:latest\\s") || udocker.py pull "ubuntu:latest"
+            ((udocker.py images | egrep -o "^ubuntu:latest\\s") || udocker.py pull "ubuntu:latest")>/dev/null
             [[ $? != 0 ]] && echo "Udocker failed while pulling container \\`ubuntu:latest\\`" >&2 && exit 1
             udocker.py run --rm -v "$PWD":"$PWD" -w "$PWD" --bindhome $(udocker.py create "ubuntu:latest") /bin/bash
             '''

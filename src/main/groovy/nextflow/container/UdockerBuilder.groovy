@@ -120,7 +120,7 @@ class UdockerBuilder extends ContainerBuilder {
 
     @Override
     StringBuilder appendRunCommand( StringBuilder wrapper ) {
-        wrapper << "((udocker.py images | egrep -o \"^$image\\s\") || udocker.py pull \"$image\")>/dev/null \n"
+        wrapper << "((udocker.py images | egrep -o \"^$image\\s\") || udocker.py pull \"$image\")>/dev/null\n"
         wrapper << "[[ \$? != 0 ]] && echo \"Udocker failed while pulling container \\`$image\\`\" >&2 && exit 1\n"
         wrapper << runCommand
         return wrapper

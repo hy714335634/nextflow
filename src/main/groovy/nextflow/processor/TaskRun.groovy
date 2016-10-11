@@ -540,15 +540,6 @@ class TaskRun implements Cloneable {
         }
     }
 
-    /**
-     * @return A {@link Map} object holding the configuration attributes for the Docker engine
-     */
-    @Deprecated
-    Map getDockerConfig() {
-        def result = processor.getSession().config?.docker as Map
-        result != null ? result : Collections.emptyMap()
-    }
-
     ContainerConfig getContainerConfig() {
 
         if( containerConfigCache != null && containerConfigHash == processor.getSession().config?.hashCode() ) {
