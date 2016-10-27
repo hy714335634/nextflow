@@ -19,9 +19,14 @@
  */
 
 package nextflow.executor
+import static nextflow.executor.AbstractGridExecutor.QueueStatus.HOLD
+import static nextflow.executor.AbstractGridExecutor.QueueStatus.PENDING
+import static nextflow.executor.AbstractGridExecutor.QueueStatus.RUNNING
+
 import java.nio.file.Path
 
 import groovy.transform.CompileStatic
+import groovy.transform.Memoized
 import groovy.transform.PackageScope
 import groovy.util.logging.Slf4j
 import nextflow.processor.TaskMonitor
@@ -31,9 +36,6 @@ import nextflow.processor.TaskRun
 import nextflow.util.Duration
 import nextflow.util.Escape
 import org.apache.commons.lang.StringUtils
-
-import static nextflow.executor.AbstractGridExecutor.QueueStatus.*
-
 /**
  * Generic task processor executing a task through a grid facility
  *
@@ -178,6 +180,23 @@ abstract class AbstractGridExecutor extends Executor {
             log.debug "Unable to resolve job custom name", e
             return null
         }
+    }
+
+    protected List<Integer> getPreemptExitStatus() {
+        def result = session?.getExecConfigProp(name, 'preemptExitStatus', null)
+        if( !result )
+            return Collections.emptyList()
+        if( result instanceof Integer )
+            return (List<Integer>)[result]
+        if( result instanceof List )
+            return (List<Integer>)result
+        throw new IllegalArgumentException("Not a valid `preemptExitStatus` value: $result")
+    }
+
+    @Memoized
+    boolean isPreemptExitStatus(exit) {
+        final values = getPreemptExitStatus()
+        return values.contains(exit)
     }
 
     /**

@@ -20,7 +20,6 @@
 
 package nextflow.executor
 import java.nio.file.Files
-import java.nio.file.Path
 
 import nextflow.processor.TaskConfig
 import nextflow.processor.TaskRun
@@ -102,6 +101,7 @@ class GridExecutorTest extends Specification {
         task.workDir = Files.createTempDirectory('testHandler')
 
         def executor = Mock(AbstractGridExecutor)
+        executor.getPreemptExitStatus() >> []
 
         when:
         def handler = new GridTaskHandler(task, executor)

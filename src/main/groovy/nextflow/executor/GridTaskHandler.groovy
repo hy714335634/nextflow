@@ -237,6 +237,22 @@ class GridTaskHandler extends TaskHandler {
          * read the exit file, it should contain the executed process exit status
          */
         def status = exitFile.text?.trim()
+
+        /*
+         * check for jon preemption
+         * http://slurm.schedmd.com/preempt.html
+         */
+        if( executor.isPreemptExitStatus(status)) {
+            log.debug "JobId `$jobId` preemption detected -- Keep job in running status"
+            // delete the exit status file containing a preemption exit status
+            exitFile.delete()
+            // return null to continue to wait for a valid job termination
+            return null
+        }
+
+        /*
+         * check for a valid exit status
+         */
         if( status ) {
             try {
                 return status.toInteger()
@@ -296,16 +312,14 @@ class GridTaskHandler extends TaskHandler {
     boolean checkIfCompleted() {
 
         // verify the exit file exists
-        def exit
-        if( isRunning() && (exit = readExitStatus()) != null ) {
-
+        Integer exit
+        if( isRunning() && (exit=readExitStatus()) != null ) {
             // finalize the task
             task.exitStatus = exit
             task.stdout = outputFile
             task.stderr = errorFile
             status = COMPLETED
             return true
-
         }
 
         return false

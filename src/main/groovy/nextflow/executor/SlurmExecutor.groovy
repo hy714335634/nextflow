@@ -163,4 +163,11 @@ class SlurmExecutor extends AbstractGridExecutor {
 
         return result
     }
+
+    private DEFAULT_PREEMPT_EXIT_STATUS = Collections.unmodifiableList([143])
+
+    @Override
+    protected List<Integer> getPreemptExitStatus() {
+        super.getPreemptExitStatus() ?: DEFAULT_PREEMPT_EXIT_STATUS
+    }
 }

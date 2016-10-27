@@ -21,6 +21,7 @@
 package nextflow.executor
 import java.nio.file.Paths
 
+import nextflow.Session
 import nextflow.processor.TaskConfig
 import nextflow.processor.TaskProcessor
 import nextflow.processor.TaskRun
@@ -241,5 +242,24 @@ class SlurmExecutorTest extends Specification {
         exec.queueStatusCommand(null) == ['squeue','-h','-o','%i %t','-t','all','-u', usr]
         exec.queueStatusCommand('xxx') == ['squeue','-h','-o','%i %t','-t','all','-u', usr]
 
+    }
+
+    def testPreemptExitStatus() {
+
+        when:
+        def exec1 = [:] as SlurmExecutor
+        then:
+        exec1.getPreemptExitStatus() == [143]
+        !exec1.isPreemptExitStatus(0)
+        exec1.isPreemptExitStatus(143)
+
+        when:
+        def exec2 = [:] as SlurmExecutor
+        exec2.session = new Session([executor: [preemptExitStatus: 100]])
+        then:
+        exec2.getPreemptExitStatus() == [100]
+        !exec2.isPreemptExitStatus(0)
+        !exec2.isPreemptExitStatus(143)
+        exec2.isPreemptExitStatus(100)
     }
 }

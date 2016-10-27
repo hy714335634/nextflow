@@ -89,4 +89,32 @@ class AbstractGridExecutorTest extends Specification {
         then:
         exec.getJobNameFor(taskRun) == 'Hello_world'
     }
+
+    def testPreemptExitStatus() {
+
+        when:
+        def exec1 = [:] as AbstractGridExecutor
+        then:
+        exec1.getPreemptExitStatus() == []
+        !exec1.isPreemptExitStatus(0)
+        !exec1.isPreemptExitStatus(1)
+
+        when:
+        def exec2 = [:] as AbstractGridExecutor
+        exec2.session = new Session([executor: [preemptExitStatus: 100]])
+        then:
+        exec2.getPreemptExitStatus() == [100]
+        !exec2.isPreemptExitStatus(0)
+        exec2.isPreemptExitStatus(100)
+
+        when:
+        def exec3 = [:] as AbstractGridExecutor
+        exec3.session = new Session([executor: [preemptExitStatus: [10,20,30]]])
+        then:
+        exec3.getPreemptExitStatus() == [10,20,30]
+        !exec3.isPreemptExitStatus(0)
+        exec3.isPreemptExitStatus(10)
+        exec3.isPreemptExitStatus(20)
+        exec3.isPreemptExitStatus(30)
+    }
 }
