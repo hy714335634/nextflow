@@ -32,13 +32,9 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class UdockerBuilder extends ContainerBuilder {
 
-    private String image
-
     private String temp
 
     private boolean remove = true
-
-    private List<String> runOptions = []
 
     private String entryPoint = '/bin/bash'
 
@@ -69,10 +65,6 @@ class UdockerBuilder extends ContainerBuilder {
         return this
     }
 
-    UdockerBuilder addRunOptions(String str) {
-        runOptions.add(str)
-        return this
-    }
 
     @Override
     UdockerBuilder build(StringBuilder result) {

@@ -1301,7 +1301,7 @@ class BashWrapperBuilderTest extends Specification {
                 scratch: true,
                 script: 'echo Hello world!',
                 containerImage: 'busybox',
-                dockerConfig: [sudo: true, enabled: true]
+                containerConfig: [engine: 'docker', sudo: true, enabled: true]
         ] as TaskBean)
         bash.build()
 
@@ -2040,7 +2040,7 @@ class BashWrapperBuilderTest extends Specification {
                 tee2=\$!
                 (
                 shifter_pull docker:ubuntu:latest
-                BASH_ENV=\"${folder}/.command.env\" shifter --image docker:ubuntu:latest /bin/bash -c "/bin/bash -ue ${folder}/.command.sh"
+                NXF_DEBUG=\${NXF_DEBUG:=0} BASH_ENV=\"${folder}/.command.env\" shifter --image docker:ubuntu:latest /bin/bash -c "/bin/bash -ue ${folder}/.command.sh"
                 ) >"\$COUT" 2>"\$CERR" &
                 pid=\$!
                 wait \$pid || ret=\$?

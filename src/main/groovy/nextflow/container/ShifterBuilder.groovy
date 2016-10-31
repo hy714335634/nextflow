@@ -36,8 +36,6 @@ class ShifterBuilder extends ContainerBuilder {
 
     private String entryPoint
 
-    private String image
-
     private boolean verbose
 
     private String runCommand
@@ -146,7 +144,7 @@ class ShifterBuilder extends ContainerBuilder {
             result << env
         }
         else if( env ) {
-            throw new IllegalArgumentException("Not a valid Shifter environment value: $env [${env.class.name}]")
+            throw new IllegalArgumentException("Not a valid environment value: $env [${env.class.name}]")
         }
 
         return result

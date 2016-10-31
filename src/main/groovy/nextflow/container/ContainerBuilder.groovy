@@ -16,11 +16,28 @@ abstract class ContainerBuilder {
 
     final protected List<Path> mounts = []
 
+    protected List<String> runOptions = []
+
+    protected List<String> engineOptions = []
+
     protected String cpus
 
     protected String memory
 
     protected String temp
+
+    protected String image
+
+
+    ContainerBuilder addRunOptions(String str) {
+        runOptions.add(str)
+        return this
+    }
+
+    ContainerBuilder addEngineOptions(String str) {
+        engineOptions.add(str)
+        return this
+    }
 
     ContainerBuilder setCpus( String value ) {
         this.cpus = value
@@ -38,6 +55,10 @@ abstract class ContainerBuilder {
             throw new IllegalArgumentException("Not a supported memory value")
 
         return this
+    }
+
+    ContainerBuilder setName(String name) {
+
     }
 
     ContainerBuilder setTemp( String value ) {
@@ -145,7 +166,7 @@ abstract class ContainerBuilder {
             result << '-e "' << env << '"'
         }
         else if( env ) {
-            throw new IllegalArgumentException("Not a valid Docker environment value: $env [${env.class.name}]")
+            throw new IllegalArgumentException("Not a valid environment value: $env [${env.class.name}]")
         }
 
         return result

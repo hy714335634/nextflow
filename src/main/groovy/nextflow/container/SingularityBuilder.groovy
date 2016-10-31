@@ -20,18 +20,22 @@
 
 package nextflow.container
 
+import java.nio.file.Path
+
+import nextflow.util.Escape
+
 /**
+ * Implements a builder for Singularity containerisation
+ *
+ * see http://singularity.lbl.gov
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
 class SingularityBuilder extends ContainerBuilder {
 
-    final String image
-
     private String entryPoint
 
     private String runCommand
-
 
     SingularityBuilder(String name) {
         this.image = name
@@ -43,19 +47,74 @@ class SingularityBuilder extends ContainerBuilder {
         if( params.containsKey('entry') )
             this.entryPoint = params.entry
 
+        if( params.containsKey('engineOptions') )
+            addEngineOptions(params.engineOptions.toString())
+
+        if( params.containsKey('runOptions') )
+            addRunOptions(params.runOptions.toString())
+
+        return this
+    }
+
+    SingularityBuilder addRunOptions(String str) {
+        runOptions.add(str)
         return this
     }
 
     @Override
     SingularityBuilder build(StringBuilder result) {
 
-        result << 'singularity exec '
+        result << 'env - PATH=$PATH '
+
+        // add the environment
+        for( def entry : env ) {
+            result << makeEnv(entry) << ' '
+        }
+
+        result << 'singularity '
+
+        if( engineOptions )
+            result << engineOptions.join(' ') << ' '
+
+        result << 'exec '
+
+        if( runOptions )
+            result << runOptions.join(' ') << ' '
 
         result << image
+
+        if( entryPoint )
+            result  << ' ' << entryPoint
 
         runCommand = result.toString()
 
         return this
+    }
+
+    @Override
+    protected CharSequence makeEnv( env, StringBuilder result = new StringBuilder() ) {
+        // append the environment configuration
+        if( env instanceof File ) {
+            env = env.toPath()
+        }
+        if( env instanceof Path ) {
+            result << 'BASH_ENV="' << Escape.path(env) << '"'
+        }
+        else if( env instanceof Map ) {
+            short index = 0
+            for( Map.Entry entry : env.entrySet() ) {
+                if( index++ ) result << ' '
+                result << ("${entry.key}=${entry.value}")
+            }
+        }
+        else if( env instanceof String && env.contains('=') ) {
+            result << env
+        }
+        else if( env ) {
+            throw new IllegalArgumentException("Not a valid environment value: $env [${env.class.name}]")
+        }
+
+        return result
     }
 
     @Override

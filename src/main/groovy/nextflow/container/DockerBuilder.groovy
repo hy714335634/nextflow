@@ -28,13 +28,7 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class DockerBuilder extends ContainerBuilder {
 
-    final String image
-
     private boolean sudo
-
-    private List<String> options = []
-
-    private List<String> engineOptions = []
 
     private boolean remove = true
 
@@ -101,18 +95,9 @@ class DockerBuilder extends ContainerBuilder {
         return this
     }
 
+    @Override
     DockerBuilder setName( String name ) {
         this.name = name
-        return this
-    }
-
-    DockerBuilder addRunOptions(String str) {
-        options.add(str)
-        return this
-    }
-
-    DockerBuilder addEngineOptions(String str) {
-        engineOptions.add(str)
         return this
     }
 
@@ -161,8 +146,8 @@ class DockerBuilder extends ContainerBuilder {
         if( entryPoint )
             result << '--entrypoint ' << entryPoint << ' '
 
-        if( options )
-            result << options.join(' ') << ' '
+        if( runOptions )
+            result << runOptions.join(' ') << ' '
 
         // the name is after the user option so it has precedence over any options provided by the user
         if( name )

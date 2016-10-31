@@ -535,6 +535,9 @@ class TaskRun implements Cloneable {
         else if( engine == 'udocker' ) {
             UdockerBuilder.normalizeImageName(imageName)
         }
+        else if( engine == 'singularity' ) {
+            imageName
+        }
         else {
             DockerBuilder.normalizeImageName(imageName, getContainerConfig())
         }
@@ -550,6 +553,7 @@ class TaskRun implements Cloneable {
         getContainerConfig0('docker', engines)
         getContainerConfig0('shifter', engines)
         getContainerConfig0('udocker', engines)
+        getContainerConfig0('singularity', engines)
 
         def enabled = engines.findAll { it.enabled?.toString() == 'true' }
         if( enabled.size() > 1 ) {
