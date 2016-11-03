@@ -66,11 +66,6 @@ class SingularityBuilder extends ContainerBuilder {
 
         result << 'env - PATH=$PATH '
 
-        // add the environment
-        for( def entry : env ) {
-            result << makeEnv(entry) << ' '
-        }
-
         result << 'singularity '
 
         if( engineOptions )
@@ -98,23 +93,31 @@ class SingularityBuilder extends ContainerBuilder {
             env = env.toPath()
         }
         if( env instanceof Path ) {
-            result << 'BASH_ENV="' << Escape.path(env) << '"'
+            result << 'export BASH_ENV="' << Escape.path(env) << '"; '
         }
         else if( env instanceof Map ) {
             short index = 0
             for( Map.Entry entry : env.entrySet() ) {
                 if( index++ ) result << ' '
-                result << ("${entry.key}=${entry.value}")
+                result << "export ${entry.key}=\"${entry.value}\"; "
             }
         }
         else if( env instanceof String && env.contains('=') ) {
-            result << env
+            result << 'export ' << env << '; '
         }
         else if( env ) {
             throw new IllegalArgumentException("Not a valid environment value: $env [${env.class.name}]")
         }
 
         return result
+    }
+
+    String getEnvExports() {
+        def result = new StringBuilder()
+        for( def entry : env ) {
+            makeEnv(entry, result)
+        }
+        return result.toString()
     }
 
     @Override

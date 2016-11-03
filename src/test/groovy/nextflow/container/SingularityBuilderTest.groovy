@@ -50,10 +50,18 @@ class SingularityBuilderTest extends Specification {
                 .build()
                 .runCommand == 'env - PATH=$PATH singularity exec --contain --writable busybox'
 
-        new SingularityBuilder('busybox')
-                .addEnv(ALPHA: 'aaa', BETA: 'bbb')
-                .build()
-                .runCommand == 'env - PATH=$PATH ALPHA=aaa BETA=bbb singularity exec busybox'
+    }
 
+    def 'should return export variables' () {
+
+        expect:
+        new SingularityBuilder('busybox')
+                .getEnvExports() == ''
+
+        new SingularityBuilder('busybox')
+                .addEnv('X=1')
+                .addEnv(ALPHA:'aaa', BETA: 'bbb')
+                .addEnv( new File('/bash/env.txt') )
+                .getEnvExports() == 'export X=1; export ALPHA="aaa";  export BETA="bbb"; export BASH_ENV="/bash/env.txt"; '
     }
 }

@@ -441,7 +441,7 @@ class BashWrapperBuilder {
         if( containerBuilder && !executable ) {
             containerBuilder.appendRunCommand(wrapper) << " -c \""
             if( containerBuilder instanceof SingularityBuilder ) {
-                wrapper << 'cd $PWD; '
+                wrapper << 'cd $PWD; ' << containerBuilder.getEnvExports()
             }
         }
 
