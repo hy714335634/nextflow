@@ -33,22 +33,22 @@ class SingularityBuilderTest extends Specification {
         expect:
         new SingularityBuilder('busybox')
                 .build()
-                .runCommand == 'env - PATH=$PATH singularity exec busybox'
+                .runCommand == 'env - PATH="$PATH" singularity exec busybox'
 
         new SingularityBuilder('busybox')
                 .params(entry: '/bin/bash')
                 .build()
-                .runCommand == 'env - PATH=$PATH singularity exec busybox /bin/bash'
+                .runCommand == 'env - PATH="$PATH" singularity exec busybox /bin/bash'
 
         new SingularityBuilder('busybox')
                 .params(engineOptions: '-q -v')
                 .build()
-                .runCommand == 'env - PATH=$PATH singularity -q -v exec busybox'
+                .runCommand == 'env - PATH="$PATH" singularity -q -v exec busybox'
 
         new SingularityBuilder('busybox')
                 .params(runOptions: '--contain --writable')
                 .build()
-                .runCommand == 'env - PATH=$PATH singularity exec --contain --writable busybox'
+                .runCommand == 'env - PATH="$PATH" singularity exec --contain --writable busybox'
 
     }
 
