@@ -396,7 +396,7 @@ class BashWrapperBuilderTest extends Specification {
                 mon=\$!
                 wait \$pid || ret=\$?
                 end_millis=\$(\$NXF_DATE)
-                kill \$mon || wait \$mon
+                nxf_kill \$mon || wait \$mon
                 echo \$((end_millis-start_millis)) >> .command.trace
                 """
                     .stripIndent().leftTrim()
@@ -729,7 +729,7 @@ class BashWrapperBuilderTest extends Specification {
             mon=\$!
             wait \$pid || ret=\$?
             end_millis=\$(\$NXF_DATE)
-            kill \$mon || wait \$mon
+            nxf_kill \$mon || wait \$mon
             echo \$((end_millis-start_millis)) >> .command.trace
             """
                     .stripIndent().leftTrim()

@@ -468,7 +468,7 @@ class BashWrapperBuilder {
             stub << 'mon=$!' << ENDL                     // get the pid of the monitor process
             stub << 'wait $pid || ret=$?' << ENDL        // wait for main job completion and get its exit status
             stub << 'end_millis=$($NXF_DATE)' << ENDL    // get the ending time
-            stub << 'kill $mon || wait $mon' << ENDL     // kill the monitor and wait for its ending
+            stub << 'nxf_kill $mon || wait $mon' << ENDL     // kill the monitor and wait for its ending
             stub << 'echo $((end_millis-start_millis)) >> ' << TaskRun.CMD_TRACE << ENDL
             // save to file
             stubFile.text = stub.toString()
